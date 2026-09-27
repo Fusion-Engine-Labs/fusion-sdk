@@ -1,0 +1,57 @@
+name: Zig
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fmt:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    container: jackpar/zig:0.16.0
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Check formatting
+        run: zig fmt --check .
+
+  test:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    container: jackpar/zig:0.16.0
+    strategy:
+      fail-fast: false
+      matrix:
+        optimize: [Debug, ReleaseSafe, ReleaseFast, ReleaseSmall]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Test project (${{ matrix.optimize }})
+        run: zig build test -Doptimize=${{ matrix.optimize }} --summary all
+
+  cross-compile:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    container: jackpar/zig:0.16.0
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [x86_64-windows, aarch64-macos, aarch64-linux, wasm32-wasi]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Compile tests for ${{ matrix.target }}
+        run: zig build check -Dtarget=${{ matrix.target }} --summary all

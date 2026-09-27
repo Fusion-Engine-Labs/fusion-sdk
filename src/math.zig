@@ -1,3 +1,5 @@
+//! Math types. Vectors and matrices come from zlm (f32); `Quat` is defined here.
+
 const std = @import("std");
 
 const zlm = @import("zlm").as(f32);
@@ -9,6 +11,7 @@ pub const Mat4 = zlm.Mat4;
 pub const Mat3 = zlm.Mat3;
 pub const Mat2 = zlm.Mat2;
 
+/// Tolerance for near-zero checks.
 pub const epsilon: f32 = 1e-8;
 
 const identity3: Mat3 = .{ .fields = .{
@@ -17,6 +20,8 @@ const identity3: Mat3 = .{ .fields = .{
     .{ 0, 0, 1 },
 } };
 
+/// Inverse-transpose of the upper 3x3, for transforming normals.
+/// Returns identity if the matrix is singular.
 pub fn normalMatrix(self: Mat4) Mat3 {
     const m = self.fields;
     const scale = @max(
@@ -49,6 +54,7 @@ pub fn normalMatrix(self: Mat4) Mat3 {
     } };
 }
 
+/// A rotation quaternion. Defaults to identity.
 pub const Quat = struct {
     x: f32 = 0,
     y: f32 = 0,
@@ -57,6 +63,7 @@ pub const Quat = struct {
 
     pub const identity = Quat{ .x = 0, .y = 0, .z = 0, .w = 1 };
 
+    /// Rotation of `angle` radians around `axis`.
     pub fn fromAxisAngle(axis: Vec3, angle: f32) Quat {
         const half = angle * 0.5;
         const s = @sin(half);
@@ -70,6 +77,7 @@ pub const Quat = struct {
         };
     }
 
+    /// Rotation from yaw (Y), pitch (X), and roll (Z) in radians. Roll applies first, yaw last.
     pub fn fromEuler(yaw: f32, pitch: f32, roll: f32) Quat {
         const qy = fromAxisAngle(Vec3.new(0, 1, 0), yaw);
         const qx = fromAxisAngle(Vec3.new(1, 0, 0), pitch);
@@ -77,6 +85,7 @@ pub const Quat = struct {
         return qy.mul(qx).mul(qz);
     }
 
+    /// Combined rotation: `b` applied first, then `a`.
     pub fn mul(a: Quat, b: Quat) Quat {
         return .{
             .w = a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z,
@@ -86,6 +95,7 @@ pub const Quat = struct {
         };
     }
 
+    /// Unit-length copy, or identity if `q` is near zero.
     pub fn normalize(q: Quat) Quat {
         const len = @sqrt(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w);
         if (len < 1e-10) return identity;
@@ -98,16 +108,19 @@ pub const Quat = struct {
         };
     }
 
+    /// Inverse rotation, for unit quaternions.
     pub fn conjugate(q: Quat) Quat {
         return .{ .x = -q.x, .y = -q.y, .z = -q.z, .w = q.w };
     }
 
+    /// Rotates `v` by `q`.
     pub fn rotateVec3(q: Quat, v: Vec3) Vec3 {
         const qv = Quat{ .x = v.x, .y = v.y, .z = v.z, .w = 0 };
         const result = q.mul(qv).mul(q.conjugate());
         return Vec3.new(result.x, result.y, result.z);
     }
 
+    /// Rotation as a 4x4 matrix.
     pub fn toMat4(q: Quat) Mat4 {
         const xx = q.x * q.x;
         const yy = q.y * q.y;
@@ -127,6 +140,7 @@ pub const Quat = struct {
         } };
     }
 
+    /// Spherical interpolation from `a` (t=0) to `b` (t=1) along the shortest path.
     pub fn slerp(a: Quat, b_in: Quat, t: f32) Quat {
         var b = b_in;
         var dot = a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;

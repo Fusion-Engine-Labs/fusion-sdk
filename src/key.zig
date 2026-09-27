@@ -1,4 +1,8 @@
+//! Keyboard key codes.
+
 const std = @import("std");
+
+/// A keyboard key. Values match GLFW key codes.
 pub const Key = enum(u16) {
     Unknown = 0,
     Space = 32,
@@ -122,6 +126,7 @@ pub const Key = enum(u16) {
     RightSuper = 347,
     Menu = 348,
 
+    /// Converts a GLFW key code, or returns `.Unknown`.
     pub fn fromGLFW(key: c_int) Key {
         return std.enums.fromInt(Key, key) orelse .Unknown;
     }

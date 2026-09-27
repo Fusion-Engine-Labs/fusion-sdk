@@ -9,7 +9,8 @@
             .hash = "zlm-0.1.0-LoZ6yDawAADMopilIe9MDzer0UqmruCy_PuhNv4OMc7c",
         },
         .zimp = .{
-            .path = "../zimp",
+            .url = "git+https://github.com/Fusion-Engine-Labs/zimp.git#6abdcbb18fcfbeb322e4c0b7320d92fb9d176672",
+            .hash = "zimp-0.0.0-jO8AWhdSEwDyI8tRYUowhw18d1OFRG7RtArvfr-S3YJi",
         },
     },
     .paths = .{
@@ -17,5 +18,6 @@
         "build.zig.zon",
         "src",
         "README.md",
+        "LICENSE",
     },
 }

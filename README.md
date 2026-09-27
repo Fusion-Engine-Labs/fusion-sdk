@@ -72,3 +72,16 @@ ABI negotiation validate this contract, not arbitrary native Zig compatibility.
 
 Run SDK tests with `zig build test`. See the sandbox README for the mixed-mode
 build and integration-test commands.
+
+## API docs
+
+Published to GitHub Pages from `main`. To view locally:
+
+```sh
+zig build docs
+python3 -m http.server -d zig-out/docs   # open http://localhost:8000
+```
+
+Pages are generated from doc comments: `//!` at the top of a file is the
+module's intro, `///` above a `pub` declaration documents it. Both are Markdown.
+The `//!` block in `src/root.zig` is the landing page.

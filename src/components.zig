@@ -1,3 +1,5 @@
+//! Built-in engine components. Games read and write these like their own.
+
 const std = @import("std");
 
 const id_types = @import("zimp").id.types;
@@ -10,6 +12,7 @@ const Mat4 = math.Mat4;
 const Quat = math.Quat;
 const Vec3 = math.Vec3;
 
+/// Position, rotation, and scale of an entity.
 pub const TransformComponent = struct {
     rotation: Quat = Quat.identity,
     position: Vec3 = Vec3.zero,
@@ -27,6 +30,7 @@ pub const TransformComponent = struct {
         },
     };
 
+    /// Local-to-world matrix: scale, then rotate, then translate.
     pub fn modelMatrix(self: *const TransformComponent) Mat4 {
         const r = self.rotation.toMat4().fields;
         return .{ .fields = .{
@@ -37,19 +41,23 @@ pub const TransformComponent = struct {
         } };
     }
 
+    /// Facing direction (-Z rotated).
     pub fn forward(self: *const TransformComponent) Vec3 {
         return self.rotation.rotateVec3(Vec3.new(0, 0, -1));
     }
 
+    /// Right direction (+X rotated).
     pub fn right(self: *const TransformComponent) Vec3 {
         return self.rotation.rotateVec3(Vec3.new(1, 0, 0));
     }
 
+    /// Up direction (+Y rotated).
     pub fn up(self: *const TransformComponent) Vec3 {
         return self.rotation.rotateVec3(Vec3.new(0, 1, 0));
     }
 };
 
+/// Draws a mesh asset at the entity's transform.
 pub const MeshRenderComponent = struct {
     mesh: AssetId,
 
@@ -70,7 +78,9 @@ pub const MeshRenderComponent = struct {
     };
 };
 
+/// Perspective camera. Mark the one to render with `ActiveCamera`.
 pub const CameraComponent = struct {
+    /// Vertical field of view, in radians.
     fov: f32 = std.math.pi / 4.0,
     far: f32 = 1000.0,
     near: f32 = 0.1,
@@ -87,10 +97,12 @@ pub const CameraComponent = struct {
         },
     };
 
+    /// Perspective projection for a width/height `aspect` ratio.
     pub fn projectionMatrix(self: *const CameraComponent, aspect: f32) Mat4 {
         return Mat4.createPerspective(self.fov, aspect, self.near, self.far);
     }
 
+    /// World-to-view matrix for a camera at `transform`.
     pub fn viewMatrix(_: *const CameraComponent, transform: *const TransformComponent) Mat4 {
         return Mat4.createLookAt(
             transform.position,
@@ -99,6 +111,7 @@ pub const CameraComponent = struct {
         );
     }
 
+    /// View-space depth of a bounding box's center. Larger is farther.
     pub fn calculateDepth(_: *const CameraComponent, model: Mat4, view: Mat4, bounds_min: [3]f32, bounds_max: [3]f32) f32 {
         const local_center = boundsCenter(bounds_min, bounds_max);
 
@@ -223,4 +236,5 @@ test "CameraComponent viewMatrix looks along the transform forward axis" {
     }
 }
 
+/// Every built-in component type.
 pub const builtin_types = &.{ TransformComponent, MeshRenderComponent, CameraComponent, ActiveCamera };

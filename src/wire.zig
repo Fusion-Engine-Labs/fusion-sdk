@@ -1,5 +1,11 @@
+//! The byte format components use to cross the library boundary.
+//!
+//! Fields are written in declaration order, little-endian, with no padding.
+//! Supported: bool, fixed-width ints and floats, enums, arrays, and structs of these.
+
 const std = @import("std");
 
+/// Encoded size of `T` in bytes.
 pub fn size(comptime T: type) usize {
     return comptime switch (@typeInfo(T)) {
         .bool => 1,
@@ -34,6 +40,7 @@ fn signature(comptime T: type) []const u8 {
     };
 }
 
+/// Fingerprint of `T`'s field names and types. Differs if the layout changes.
 pub fn layout(comptime T: type) u64 {
     return comptime blk: {
         @setEvalBranchQuota(100000);
@@ -41,6 +48,7 @@ pub fn layout(comptime T: type) u64 {
     };
 }
 
+/// Writes `value` into `out`, which must be exactly `size(T)` bytes.
 pub fn encode(comptime T: type, value: T, out: []u8) void {
     std.debug.assert(out.len == size(T));
     switch (@typeInfo(T)) {
@@ -60,6 +68,7 @@ pub fn encode(comptime T: type, value: T, out: []u8) void {
     }
 }
 
+/// Reads a `T` from `bytes`. Fails on wrong length or invalid bool/enum values.
 pub fn decode(comptime T: type, bytes: []const u8) !T {
     if (bytes.len != size(T)) return error.InvalidWireSize;
     switch (@typeInfo(T)) {

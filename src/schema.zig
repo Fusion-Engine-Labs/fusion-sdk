@@ -1,3 +1,9 @@
+//! Derives a component's editor/serialization schema from its `schema_meta`.
+//!
+//! Every field needs a `schema_meta` entry and a default value (a Zig default
+//! or `default_override`). Types without an obvious kind (such as asset IDs)
+//! need a `kind_override`. Mistakes are compile errors.
+
 const zimp = @import("zimp");
 const std = @import("std");
 
@@ -22,6 +28,7 @@ fn autoFieldKind(comptime FT: type) ?FieldKind {
     };
 }
 
+/// Wraps a raw field value as a schema `Value` of the given kind.
 pub fn toValue(comptime kind: std.meta.Tag(FieldKind), raw: anytype) Value {
     return switch (kind) {
         .i32 => .{ .i32 = raw },
@@ -38,11 +45,13 @@ pub fn toValue(comptime kind: std.meta.Tag(FieldKind), raw: anytype) Value {
     };
 }
 
+/// Returns a struct field's Zig default value, if it has one.
 pub fn structFieldDefault(comptime sf: std.builtin.Type.StructField) ?sf.type {
     const ptr = sf.default_value_ptr orelse return null;
     return @as(*const sf.type, @ptrCast(@alignCast(ptr))).*;
 }
 
+/// A struct field paired with its `schema_meta` entry.
 pub const PersistedField = struct {
     name: [:0]const u8,
     number: u32,
@@ -50,6 +59,7 @@ pub const PersistedField = struct {
     sf: std.builtin.Type.StructField,
     meta: zimp.scene.FieldMeta,
 
+    /// All fields of `T` in declaration order. Validates `T.schema_meta`.
     pub fn Fields(comptime T: type) []const PersistedField {
         const meta: zimp.scene.SchemaMeta = T.schema_meta;
         const struct_fields = @typeInfo(T).@"struct".fields;
@@ -95,6 +105,7 @@ pub const PersistedField = struct {
     }
 };
 
+/// Builds the full component schema for `T`.
 pub fn deriveSchema(comptime T: type) zimp.scene.ComponentSchema {
     const meta: zimp.scene.SchemaMeta = T.schema_meta;
     const pfs = comptime PersistedField.Fields(T);

@@ -3,10 +3,19 @@
     .version = "0.0.0",
     .fingerprint = 0x783eaeb30e8102b5,
     .minimum_zig_version = "0.16.0",
-    .dependencies = .{},
+    .dependencies = .{
+        .zlm = .{
+            .url = "git+https://github.com/ziglibs/zlm.git#35ab7df57cfb5392a11486f6e4b03a82f849a118",
+            .hash = "zlm-0.1.0-LoZ6yDawAADMopilIe9MDzer0UqmruCy_PuhNv4OMc7c",
+        },
+        .zimp = .{
+            .path = "../zimp",
+        },
+    },
     .paths = .{
         "build.zig",
         "build.zig.zon",
         "src",
+        "README.md",
     },
 }

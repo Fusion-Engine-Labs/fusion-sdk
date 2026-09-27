@@ -10,6 +10,11 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+    inline for (.{ "zlm", "zimp" }) |name| {
+        const dep = b.dependency(name, .{ .target = target, .optimize = optimize });
+        mod.addImport(name, dep.module(name));
+    }
+
     const mod_tests = b.addTest(.{
         .root_module = mod,
     });

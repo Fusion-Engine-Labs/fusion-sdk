@@ -217,5 +217,30 @@ pub fn exportGame(comptime module: *const abi.Game) void {
 }
 
 test {
-    std.testing.refAllDecls(@This());
+    refAllDeclsRecursive(@This());
+    inline for (.{ descriptor, components, schema, wire, math, abi, @import("key.zig") }) |file| {
+        refAllDeclsRecursive(file);
+    }
+}
+
+/// Like `std.testing.refAllDecls`, but also descends into container types
+/// declared inside `T`. Aliases to types defined elsewhere (dependencies,
+/// sibling files) are referenced but not descended into.
+fn refAllDeclsRecursive(comptime T: type) void {
+    if (!@import("builtin").is_test) return;
+    inline for (comptime std.meta.declarations(T)) |decl| {
+        const value = @field(T, decl.name);
+        if (@TypeOf(value) == type) {
+            switch (@typeInfo(value)) {
+                .@"struct", .@"enum", .@"union", .@"opaque" => {
+                    const prefix = @typeName(T) ++ ".";
+                    if (comptime std.mem.startsWith(u8, @typeName(value), prefix)) {
+                        refAllDeclsRecursive(value);
+                    }
+                },
+                else => {},
+            }
+        }
+        _ = &value;
+    }
 }

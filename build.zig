@@ -1,5 +1,7 @@
 const std = @import("std");
 
+pub const addProjectCookStep = @import("zimp").addProjectCookStep;
+
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
@@ -10,10 +12,12 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    inline for (.{ "zlm", "zimp" }) |name| {
-        const dep = b.dependency(name, .{ .target = target, .optimize = optimize });
-        mod.addImport(name, dep.module(name));
-    }
+    const zlm_mod = b.dependency("zlm", .{ .target = target, .optimize = optimize }).module("zlm");
+    const zimp_mod = b.dependency("zimp", .{ .target = target, .optimize = optimize }).module("zimp");
+    mod.addImport("zlm", zlm_mod);
+    mod.addImport("zimp", zimp_mod);
+
+    b.modules.put(b.graph.arena, b.dupe("zimp"), zimp_mod) catch @panic("OOM");
 
     const mod_tests = b.addTest(.{
         .root_module = mod,

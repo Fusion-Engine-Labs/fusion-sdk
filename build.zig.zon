@@ -9,8 +9,8 @@
             .hash = "zlm-0.1.0-LoZ6yDawAADMopilIe9MDzer0UqmruCy_PuhNv4OMc7c",
         },
         .zimp = .{
-            .url = "git+https://github.com/Fusion-Engine-Labs/zimp.git#fd2e46ec7fc3b79d19fe6d511f00330954799369",
-            .hash = "zimp-0.0.0-jO8AWjeFNQCh1JXWEfWEFXoYMYOWSWmT5WcB5bFcI3II",
+            .url = "git+https://github.com/Fusion-Engine-Labs/zimp.git#43fc95969eda07491a2ae6f7475666745acbfe7f",
+            .hash = "zimp-0.0.0-jO8AWs6KNQDFHQ8-ihmaP2nB6nzIt40EcUYDiDo5xVkU",
         },
     },
     .paths = .{

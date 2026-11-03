@@ -14,7 +14,7 @@ pub const max_descriptor_size = 64 * 1024;
 pub const max_query_terms = 16;
 
 /// Length of `Frame.keys`.
-pub const key_count = @intFromEnum(@import("key.zig").Key.Menu) + 1;
+pub const key_count = @backingInt(@import("key.zig").Key.Menu) + 1;
 
 /// Result of every host and game callback.
 pub const Status = enum(u32) {
@@ -62,7 +62,7 @@ pub const Frame = extern struct {
 
     /// True while `key` is held.
     pub fn isKeyDown(self: *const Frame, key: @import("key.zig").Key) bool {
-        return self.keys[@intFromEnum(key)] != 0;
+        return self.keys[@backingInt(key)] != 0;
     }
 };
 

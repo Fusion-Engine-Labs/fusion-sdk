@@ -229,7 +229,7 @@ test {
 fn refAllDeclsRecursive(comptime T: type) void {
     if (!@import("builtin").is_test) return;
     inline for (comptime std.meta.declarations(T)) |decl| {
-        const value = @field(T, decl.name);
+        const value = @field(T, decl);
         if (@TypeOf(value) == type) {
             switch (@typeInfo(value)) {
                 .@"struct", .@"enum", .@"union", .@"opaque" => {

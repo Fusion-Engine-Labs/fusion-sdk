@@ -2,15 +2,15 @@
     .name = .fusion_sdk,
     .version = "0.0.0",
     .fingerprint = 0x783eaeb30e8102b5,
-    .minimum_zig_version = "0.16.0",
+    .minimum_zig_version = "0.17.0",
     .dependencies = .{
         .zlm = .{
-            .url = "git+https://github.com/ziglibs/zlm.git#35ab7df57cfb5392a11486f6e4b03a82f849a118",
-            .hash = "zlm-0.1.0-LoZ6yDawAADMopilIe9MDzer0UqmruCy_PuhNv4OMc7c",
+            .url = "git+https://github.com/ziglibs/zlm.git#fde6ad83e5f9c6d5e97998a2413453449e6c5f30",
+            .hash = "zlm-0.1.0-LoZ6yDSxAADoUzGtE_qajExDKr0kx1bVJyX0YOTzT3A3",
         },
         .zimp = .{
-            .url = "git+https://github.com/Fusion-Engine-Labs/zimp.git#43fc95969eda07491a2ae6f7475666745acbfe7f",
-            .hash = "zimp-0.0.0-jO8AWs6KNQDFHQ8-ihmaP2nB6nzIt40EcUYDiDo5xVkU",
+            .url = "git+https://github.com/Fusion-Engine-Labs/zimp.git#5576d10f3117a90d524a677b0ca3b5e0700db975",
+            .hash = "zimp-0.0.0-jO8AWraQNQAXo4BDGimBVEf-5pGDGvNxscjdeMhoDCCu",
         },
     },
     .paths = .{

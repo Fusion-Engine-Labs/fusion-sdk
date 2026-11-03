@@ -17,18 +17,21 @@ concurrency:
 jobs:
   fmt:
     runs-on: blacksmith-4vcpu-ubuntu-2404
-    container: jackpar/zig:0.16.0
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+
+      - name: Setup Zig
+        uses: mlugg/setup-zig@v2
+        with:
+            version: 0.17.0
 
       - name: Check formatting
         run: zig fmt --check .
 
   test:
     runs-on: blacksmith-4vcpu-ubuntu-2404
-    container: jackpar/zig:0.16.0
     strategy:
       fail-fast: false
       matrix:
@@ -38,12 +41,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      - name: Setup Zig
+        uses: mlugg/setup-zig@v2
+        with:
+            version: 0.17.0
+
       - name: Test project (${{ matrix.optimize }})
         run: zig build test -Doptimize=${{ matrix.optimize }} --summary all
 
   cross-compile:
     runs-on: blacksmith-4vcpu-ubuntu-2404
-    container: jackpar/zig:0.16.0
     strategy:
       fail-fast: false
       matrix:
@@ -52,6 +59,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+
+      - name: Setup Zig
+        uses: mlugg/setup-zig@v2
+        with:
+            version: 0.17.0
 
       - name: Compile tests for ${{ matrix.target }}
         run: zig build check -Dtarget=${{ matrix.target }} --summary all

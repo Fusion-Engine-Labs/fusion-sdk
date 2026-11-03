@@ -15,7 +15,7 @@ pub fn size(comptime T: type) usize {
         .array => |a| a.len * size(a.child),
         .@"struct" => |s| blk: {
             var n: usize = 0;
-            for (s.fields) |f| n += size(f.type);
+            for (s.field_types) |ty| n += size(ty);
             break :blk n;
         },
         else => @compileError("SDK components must contain only fixed-size values: " ++ @typeName(T)),
@@ -55,13 +55,13 @@ pub fn encode(comptime T: type, value: T, out: []u8) void {
         .bool => out[0] = @intFromBool(value),
         .int => std.mem.writeInt(T, out[0..comptime size(T)], value, .little),
         .float => |f| std.mem.writeInt(std.meta.Int(.unsigned, f.bits), out[0..comptime size(T)], @bitCast(value), .little),
-        .@"enum" => |e| encode(e.tag_type, @intFromEnum(value), out),
+        .@"enum" => |e| encode(e.tag_type, @backingInt(value), out),
         .array => |a| for (value, 0..) |v, i| encode(a.child, v, out[i * size(a.child) ..][0..size(a.child)]),
         .@"struct" => |s| {
             comptime var start: usize = 0;
-            inline for (s.fields) |f| {
-                encode(f.type, @field(value, f.name), out[start..][0..size(f.type)]);
-                start += comptime size(f.type);
+            inline for (s.field_names, s.field_types) |name, ty| {
+                encode(ty, @field(value, name), out[start..][0..size(ty)]);
+                start += comptime size(ty);
             }
         },
         else => unreachable,
@@ -88,9 +88,9 @@ pub fn decode(comptime T: type, bytes: []const u8) !T {
         .@"struct" => |s| {
             var out: T = undefined;
             comptime var start: usize = 0;
-            inline for (s.fields) |f| {
-                @field(out, f.name) = try decode(f.type, bytes[start..][0..size(f.type)]);
-                start += comptime size(f.type);
+            inline for (s.field_names, s.field_types) |name, ty| {
+                @field(out, name) = try decode(ty, bytes[start..][0..size(ty)]);
+                start += comptime size(ty);
             }
             return out;
         },

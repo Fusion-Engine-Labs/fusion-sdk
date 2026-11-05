@@ -90,3 +90,25 @@ pub const Game = extern struct {
 pub const entry_symbol = "fusion_get_game";
 /// Type of the `entry_symbol` function.
 pub const GetGame = *const fn () callconv(.c) *const Game;
+
+test "ABI bytes cursor and key input preserve their contract" {
+    const std = @import("std");
+    const Key = @import("key.zig").Key;
+    const raw = "host bytes";
+    try std.testing.expectEqualStrings(raw, Bytes.from(raw).slice());
+
+    const cursor = Cursor{ .count = 1, .ids = @splat(0) };
+    try std.testing.expectEqual(@as(u32, 0), cursor.row);
+    try std.testing.expectEqual(@as(u32, 0), cursor.columns[0]);
+    try std.testing.expectEqual(@as(u32, 0), cursor.ticks[0]);
+
+    var frame = Frame{};
+    try std.testing.expect(!frame.isKeyDown(.Space));
+    frame.keys[@backingInt(Key.Space)] = 2;
+    try std.testing.expect(frame.isKeyDown(.Space));
+    try std.testing.expectEqual(Key.Space, Key.fromGLFW(32));
+    try std.testing.expectEqual(Key.Unknown, Key.fromGLFW(-1));
+    try std.testing.expectEqual(Key.Unknown, Key.fromGLFW(33));
+    try std.testing.expectEqual(Key.Menu, Key.fromGLFW(348));
+    try std.testing.expectEqual(@as(usize, 349), key_count);
+}

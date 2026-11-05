@@ -221,6 +221,7 @@ test {
     inline for (.{ descriptor, components, schema, wire, math, abi, @import("key.zig") }) |file| {
         refAllDeclsRecursive(file);
     }
+    _ = @import("root_test.zig");
 }
 
 /// Like `std.testing.refAllDecls`, but also descends into container types

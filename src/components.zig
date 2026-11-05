@@ -236,5 +236,13 @@ test "CameraComponent viewMatrix looks along the transform forward axis" {
     }
 }
 
+test "CameraComponent depth uses transformed bounding-box center" {
+    const camera = CameraComponent{};
+    const model = Mat4.createTranslationXYZ(2, 3, -5);
+    const view = Mat4.createTranslationXYZ(0, 0, -2);
+    try expectApproxEq(@as(f32, 7), camera.calculateDepth(model, view, .{ -1, -1, -1 }, .{ 1, 1, 1 }), tolerance);
+    try expectApproxEq(@as(f32, 6), camera.calculateDepth(model, view, .{ -1, -1, 0 }, .{ 1, 1, 2 }), tolerance);
+}
+
 /// Every built-in component type.
 pub const builtin_types = &.{ TransformComponent, MeshRenderComponent, CameraComponent, ActiveCamera };

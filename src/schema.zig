@@ -157,9 +157,48 @@ test "derive schemas from Zig defaults and metadata overrides" {
     const components = @import("components.zig");
     const camera = comptime deriveSchema(components.CameraComponent);
     const mesh = comptime deriveSchema(components.MeshRenderComponent);
+    const transform = comptime deriveSchema(components.TransformComponent);
 
     try std.testing.expectEqual(@as(usize, 3), camera.fields.len);
     try std.testing.expectEqual(@as(f32, std.math.pi / 4.0), camera.fields[0].default_value.f32);
     try std.testing.expectEqual(@as(usize, 1), mesh.fields.len);
     try std.testing.expectEqual(id_types.AssetId.zero, mesh.fields[0].default_value.asset_ref);
+    try std.testing.expectEqualDeep([3]f32{ 0, 0, 0 }, transform.fields[1].default_value.vec3);
+    try std.testing.expectEqualDeep([4]f32{ 0, 0, 0, 1 }, transform.fields[0].default_value.quat);
+    try std.testing.expectEqual(@as(u32, 17), toValue(.u32, @as(u32, 17)).u32);
+}
+
+test "derived schema preserves field order and metadata with scalar and reference defaults" {
+    const T = struct {
+        enabled: bool = true,
+        count: i32 = -4,
+        offset: math.Vec2 = math.Vec2.new(2, 3),
+        label: []const u8 = "sample",
+        target: id_types.SceneEntityId = id_types.SceneEntityId.zero,
+        pub const schema_meta = zimp.scene.SchemaMeta{
+            .id = "33333333-3333-4333-8333-333333333333",
+            .name = "test.schema",
+            .display_name = "Test Schema",
+            .version = 2,
+            .fields = &.{
+                .{ .name = "enabled", .number = 5 },
+                .{ .name = "count", .number = 3, .default_override = .{ .i32 = 9 } },
+                .{ .name = "offset", .number = 4 },
+                .{ .name = "label", .number = 2 },
+                .{ .name = "target", .number = 1 },
+            },
+        };
+    };
+    const result = comptime deriveSchema(T);
+    try std.testing.expectEqualStrings("Test Schema", result.display_name);
+    try std.testing.expectEqual(@as(u32, 2), result.version);
+    try std.testing.expectEqual(@as(usize, 5), result.fields.len);
+    try std.testing.expectEqualStrings("enabled", result.fields[0].name);
+    try std.testing.expectEqual(@as(u32, 5), result.fields[0].number);
+    try std.testing.expect(result.fields[0].default_value.bool);
+    try std.testing.expectEqual(@as(i32, 9), result.fields[1].default_value.i32);
+    try std.testing.expectEqualDeep([2]f32{ 2, 3 }, result.fields[2].default_value.vec2);
+    try std.testing.expectEqualStrings("sample", result.fields[3].default_value.string);
+    try std.testing.expectEqual(id_types.SceneEntityId.zero, result.fields[4].default_value.entity_ref);
+    try std.testing.expectEqual(@as(u32, 1), result.fields[4].number);
 }

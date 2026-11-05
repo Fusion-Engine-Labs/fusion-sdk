@@ -26,14 +26,18 @@ fn signature(comptime T: type) []const u8 {
     return comptime switch (@typeInfo(T)) {
         .bool, .int, .float => @typeName(T),
         .@"enum" => |e| blk: {
-            var s = "enum:" ++ signature(e.tag_type);
-            for (e.fields) |f| s = s ++ ":" ++ f.name ++ "=" ++ std.fmt.comptimePrint("{d}", .{f.value});
+            var s: []const u8 = "enum:" ++ signature(e.tag_type);
+            for (e.field_names, e.field_values) |name, value| {
+                s = s ++ ":" ++ name ++ "=" ++ std.fmt.comptimePrint("{d}", .{value});
+            }
             break :blk s;
         },
         .array => |a| std.fmt.comptimePrint("[{d}]", .{a.len}) ++ signature(a.child),
         .@"struct" => |s| blk: {
             var text: []const u8 = "{";
-            for (s.fields) |f| text = text ++ f.name ++ ":" ++ signature(f.type) ++ ";";
+            for (s.field_names, s.field_types) |name, ty| {
+                text = text ++ name ++ ":" ++ signature(ty) ++ ";";
+            }
             break :blk text ++ "}";
         },
         else => @compileError("unsupported wire type " ++ @typeName(T)),
@@ -54,7 +58,7 @@ pub fn encode(comptime T: type, value: T, out: []u8) void {
     switch (@typeInfo(T)) {
         .bool => out[0] = @intFromBool(value),
         .int => std.mem.writeInt(T, out[0..comptime size(T)], value, .little),
-        .float => |f| std.mem.writeInt(std.meta.Int(.unsigned, f.bits), out[0..comptime size(T)], @bitCast(value), .little),
+        .float => |f| std.mem.writeInt(@Int(.unsigned, f.bits), out[0..comptime size(T)], @bitCast(value), .little),
         .@"enum" => |e| encode(e.tag_type, @backingInt(value), out),
         .array => |a| for (value, 0..) |v, i| encode(a.child, v, out[i * size(a.child) ..][0..size(a.child)]),
         .@"struct" => |s| {
@@ -78,8 +82,8 @@ pub fn decode(comptime T: type, bytes: []const u8) !T {
             else => error.InvalidWireValue,
         },
         .int => return std.mem.readInt(T, bytes[0..comptime size(T)], .little),
-        .float => |f| return @bitCast(std.mem.readInt(std.meta.Int(.unsigned, f.bits), bytes[0..comptime size(T)], .little)),
-        .@"enum" => |e| return std.meta.intToEnum(T, try decode(e.tag_type, bytes)),
+        .float => |f| return @bitCast(std.mem.readInt(@Int(.unsigned, f.bits), bytes[0..comptime size(T)], .little)),
+        .@"enum" => |e| return std.enums.fromInt(T, try decode(e.tag_type, bytes)) orelse error.InvalidEnumTag,
         .array => |a| {
             var out: T = undefined;
             for (&out, 0..) |*v, i| v.* = try decode(a.child, bytes[i * size(a.child) ..][0..size(a.child)]);
@@ -106,4 +110,24 @@ test "wire encoding excludes native padding and rejects invalid booleans" {
     try std.testing.expectEqual(@as(u32, 0x12345678), (try decode(T, &bytes)).b);
     bytes[5] = 2;
     try std.testing.expectError(error.InvalidWireValue, decode(T, &bytes));
+}
+
+test "wire handles signed integers floats enums arrays and nested structs" {
+    const Mode = enum(u8) { off = 0, on = 3 };
+    const T = struct { signed: i16, ratio: f32, modes: [2]Mode, nested: struct { enabled: bool } };
+    const value: T = .{ .signed = -2, .ratio = 1.0, .modes = .{ .off, .on }, .nested = .{ .enabled = false } };
+    var bytes: [size(T)]u8 = undefined;
+    encode(T, value, &bytes);
+    try std.testing.expectEqualSlices(u8, &.{ 0xfe, 0xff, 0, 0, 0x80, 0x3f, 0, 3, 0 }, &bytes);
+    try std.testing.expectEqualDeep(value, try decode(T, &bytes));
+    try std.testing.expectError(error.InvalidWireSize, decode(T, bytes[0 .. bytes.len - 1]));
+    bytes[7] = 2;
+    try std.testing.expectError(error.InvalidEnumTag, decode(T, &bytes));
+}
+
+test "wire layout changes with field names types and enum values" {
+    const Base = struct { value: u32 };
+    try std.testing.expect(layout(Base) != layout(struct { renamed: u32 }));
+    try std.testing.expect(layout(Base) != layout(struct { value: i32 }));
+    try std.testing.expect(layout(enum(u8) { a = 1 }) != layout(enum(u8) { a = 2 }));
 }
